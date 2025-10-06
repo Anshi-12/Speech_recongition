@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Q&A for {{ recording.display_name or recording.original_filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-recording-id="{{ recording.id }}">
+    <div class="row">
+        <!-- Transcript Panel -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-audio me-2"></i>
+                        {{ recording.display_name or recording.original_filename }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Audio Player -->
+                    <div class="mb-3">
+                        <audio controls class="w-100">
+                            <source src="{{ url_for('transcribe.uploaded_file', filename=recording.filename) }}"
+                                type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+
+                    <!-- Transcript -->
+                    <div class="transcript-container">
+                        <h6>Transcript:</h6>
+                        <div class="p-3 bg-light rounded" style="max-height: 400px; overflow-y: auto;">
+                            <p id="transcript-text">{{ recording.transcription or recording.text }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q&A Panel -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>
+                        Ask Questions About This Transcript
+                    </h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <!-- Question Input -->
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <input type="text" id="question-input" class="form-control"
+                                placeholder="Ask a question about the transcript..."
+                                onkeypress="handleQuestionKeyPress(event)">
+                            <button class="btn btn-success" type="button" onclick="askQuestion()">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            Press Enter to ask your question
+                        </div>
+                    </div>
+
+                    <!-- Suggested Questions -->
+                    {% if suggested_questions %}
+                    <div class="mb-3">
+                        <h6>Suggested Questions:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for question in suggested_questions %}
+                            <button class="btn btn-outline-primary btn-sm suggested-question"
+                                onclick="askSuggestedQuestion('{{ question }}')">
+                                {{ question }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Q&A Chat Area -->
+                    <div class="qa-chat flex-grow-1" style="min-height: 300px; max-height: 400px; overflow-y: auto;">
+                        <div id="qa-messages">
+                            {% if qa_sessions %}
+                            {% for session in qa_sessions %}
+                            <div class="qa-item mb-3">
+                                <div class="question mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-circle text-primary me-2"></i>
+                                        <strong>You:</strong>
+                                    </div>
+                                    <div class="ms-4 p-2 bg-primary text-white rounded">
+                                        {{ session.question }}
+                                    </div>
+                                </div>
+                                <div class="answer">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-robot text-success me-2"></i>
+                                        <strong>AI:</strong>
+                                        {% if session.confidence_score %}
+                                        <span class="badge bg-info ms-2">
+                                            {{ "%.0f"|format(session.confidence_score * 100) }}% confidence
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ms-4 p-2 bg-light rounded">
+                                        {{ session.answer }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-comments fa-3x mb-3"></i>
+                                <p>No questions asked yet. Start by asking a question above!</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Loading indicator -->
+                    <div id="loading-indicator" class="text-center py-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-2">Processing your question...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('transcribe.result', recording_id=recording.id) }}"
+                    class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Transcript
+                </a>
+                <a href="{{ url_for('main.history') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-history me-2"></i> All Recordings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get recording ID from data attribute
+    const recordingId = parseInt(document.querySelector('.container-fluid').getAttribute('data-recording-id'));
+
+    function handleQuestionKeyPress(event) {
+        if (event.key === 'Enter') {
+            askQuestion();
+        }
+    }
+
+    function askSuggestedQuestion(question) {
+        document.getElementById('question-input').value = question;
+        askQuestion();
+    }
+
+    async function askQuestion() {
+        const questionInput = document.getElementById('question-input');
+        const question = questionInput.value.trim();
+
+        if (!question) {
+            alert('Please enter a question');
+            return;
+        }
+
+        // Show loading indicator
+        document.getElementById('loading-indicator').style.display = 'block';
+
+        // Clear input
+        questionInput.value = '';
+
+        // Add question to chat immediately
+        addQuestionToChat(question);
+
+        try {
+            const response = await fetch('/qa/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    recording_id: recordingId,
+                    question: question
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                addAnswerToChat(data.answer, data.confidence);
+            } else {
+                addAnswerToChat('Error: ' + (data.error || 'Unknown error occurred'), 0);
+            }
+        } catch (error) {
+            addAnswerToChat('Error: Failed to process question. Please try again.', 0);
+            console.error('Error:', error);
+        } finally {
+            // Hide loading indicator
+            document.getElementById('loading-indicator').style.display = 'none';
+        }
+    }
+
+    function addQuestionToChat(question) {
+        const messagesContainer = document.getElementById('qa-messages');
+
+        const qaItem = document.createElement('div');
+        qaItem.className = 'qa-item mb-3';
+
+        qaItem.innerHTML = `
+        <div class="question mb-2">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle text-primary me-2"></i>
+                <strong>You:</strong>
+            </div>
+            <div class="ms-4 p-2 bg-primary text-white rounded">
+                ${escapeHtml(question)}
+            </div>
+        </div>
+        <div class="answer" id="answer-placeholder">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-robot text-success me-2"></i>
+                <strong>AI:</strong>
+            </div>
+            <div class="ms-4 p-2 bg-light rounded">
+                <i class="fas fa-spinner fa-spin"></i> Thinking...
+            </div>
+        </div>
+    `;
+
+        messagesContainer.appendChild(qaItem);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addAnswerToChat(answer, confidence) {
+        const answerPlaceholder = document.getElementById('answer-placeholder');
+
+        if (answerPlaceholder) {
+            const confidenceBadge = confidence > 0 ?
+                `<span class="badge bg-info ms-2">${Math.round(confidence * 100)}% confidence</span>` : '';
+
+            answerPlaceholder.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-robot text-success me-2"></i>
+                <strong>AI:</strong>
+                ${confidenceBadge}
+            </div>
+            <div class="ms-4 p-2 bg-light rounded">
+                ${escapeHtml(answer)}
+            </div>
+        `;
+
+            answerPlaceholder.id = ''; // Remove the ID
+        }
+
+        const messagesContainer = document.getElementById('qa-messages');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Auto-focus on question input when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('question-input').focus();
+    });
+</script>
+{% endblock %}
