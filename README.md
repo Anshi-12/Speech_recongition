@@ -127,12 +127,11 @@ speech_recognition/
 
 ## 📸 Screenshots
 
-![image](https://github.com/user-attachments/assets/df1ea9a8-c7db-4a5c-9cc7-8f09f044faaf)
-![image](https://github.com/user-attachments/assets/15bc2fe7-890c-41c2-a91e-39f556828163)
-![image](https://github.com/user-attachments/assets/b06bd5b2-528a-4ba3-9a45-b850bb820f64)
-![image](https://github.com/user-attachments/assets/0edc3e6a-a0b7-4222-bb6d-3b5f7e03b05e)
-![image](https://github.com/user-attachments/assets/79b1fdd9-9854-4c2f-8f45-51557cadc1ee)
-
+![image](https://github.com/user-attachments/assets/6957ac91-5069-4e1a-a0dc-688b665d0044)
+![image](https://github.com/user-attachments/assets/12081d62-5c35-4f78-8065-4511a0493e43)
+![image](https://github.com/user-attachments/assets/615e0308-ad15-4d18-8971-79865dcfeeed)
+![image](https://github.com/user-attachments/assets/0b2d8821-97fa-45c8-85b0-02f8feda9002)
+![image](https://github.com/user-attachments/assets/daeb9a8f-3ea5-4553-94fa-8046a5506aef)
 
 ## 🔒 Security Features
 
