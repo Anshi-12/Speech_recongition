@@ -1,4 +1,4 @@
-# SpeechAI - Advanced Speech Recognition Web Application
+# VoiceScribe - Advanced Speech Recognition Web Application
 
 SpeechAI is a powerful web application that transforms audio recordings into accurate text transcriptions using cutting-edge AI technology. Built with Flask, Bootstrap, and the Wav2Vec 2.0 speech recognition model, this application offers a seamless experience for converting spoken content into written text.
 
