@@ -1,14 +1,18 @@
 # VoiceScribe - Advanced Speech Recognition Web Application
 
-SpeechAI is a powerful web application that transforms audio recordings into accurate text transcriptions using cutting-edge AI technology. Built with Flask, Bootstrap, and the Wav2Vec 2.0 speech recognition model, this application offers a seamless experience for converting spoken content into written text.
+VoiceScribe is a powerful web application that transforms audio recordings into accurate text transcriptions using cutting-edge AI technology. Built with Flask, Bootstrap, and the Wav2Vec 2.0 speech recognition model, this application offers a seamless experience for converting spoken content into written text with intelligent Q&A capabilities.
 
 ## 🚀 Features
 
 - **AI-Powered Transcription**: Uses Facebook's Wav2Vec 2.0 Large model for accurate speech recognition
+- **Intelligent Q&A System**: Ask questions about your transcribed content using DistilBERT AI model
 - **Multiple Audio Formats**: Support for MP3, WAV, M4A, FLAC, and OGG audio files
 - **User Authentication**: Secure login and registration system
-- **Dashboard**: Personalized user dashboard with transcription history and statistics
+- **Dashboard**: Personalized user dashboard with transcription history and Q&A statistics
 - **File Management**: Upload, view, and manage audio transcriptions
+- **Q&A History**: Save and review all your questions and AI-generated answers
+- **Confidence Scoring**: Get confidence ratings for AI answers
+- **Suggested Questions**: Automatically generated relevant questions based on content
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **Copy & Download**: Easily copy or download transcription results
 
@@ -16,9 +20,13 @@ SpeechAI is a powerful web application that transforms audio recordings into acc
 
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap 5
 - **Backend**: Python, Flask
-- **Database**: SQLAlchemy
+- **Database**: SQLAlchemy with Flask-Migrate
 - **Authentication**: Flask-Login
-- **AI Model**: Wav2Vec 2.0 
+- **AI Models**: 
+  - Wav2Vec 2.0 (Speech Recognition)
+  - DistilBERT-base-cased-distilled-squad (Question Answering)
+- **ML Libraries**: PyTorch, Transformers, Sentence-Transformers
+- **Audio Processing**: Librosa, PyDub, SpeechRecognition
 - **Styling**: Font Awesome icons, Animate.css animations
 
 ## 🛠️ Project Structure
@@ -43,23 +51,41 @@ speech_recognition/
 │   │   ├── transcribe/
 │   │   │   ├── index.html
 │   │   │   └── result.html
+│   │   ├── qa/
+│   │   │   ├── index.html
+│   │   │   └── history.html
 │   │   ├── partials/
 │   │   │   └── navbar.html
 │   │   ├── about.html
 │   │   ├── base.html
 │   │   └── index.html
+│   ├── services/
+│   │   └── qa_service.py
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── recording.py
+│   │   └── qa_session.py
+│   ├── routes/
+│   │   ├── auth.py
+│   │   ├── main.py
+│   │   ├── speech.py
+│   │   ├── transcribe.py
+│   │   └── qa.py
 │   ├── __init__.py
-│   ├── models.py
-│   └── routes/
+│   └── config.py
+├── migrations/
+├── setup_qa_feature.py
+├── QA_FEATURE_README.md
 └── requirements.txt
 ```
 
 ## 📌 Key Pages
 
-- **Home Page**: Introduction to SpeechAI with feature highlights
+- **Home Page**: Introduction to VoiceScribe with feature highlights
 - **Dashboard**: User dashboard showing statistics and recent transcriptions
 - **Transcribe**: Upload audio files for transcription
-- **History**: View and manage all past transcriptions
+- **Q&A Interface**: Ask questions about your transcribed content
+- **History**: View and manage all past transcriptions and Q&A sessions
 - **Profile**: User account management
 - **About**: Information about the application and technology
 
@@ -85,7 +111,12 @@ speech_recognition/
    pip install -r requirements.txt
    ```
 
-4. Set up environment variables:
+4. Set up the Q&A feature (optional but recommended):
+   ```bash
+   python setup_qa_feature.py
+   ```
+
+5. Set up environment variables:
    ```bash
    # Windows
    set FLASK_APP=app
@@ -96,19 +127,19 @@ speech_recognition/
    export FLASK_ENV=development
    ```
 
-5. Initialize the database:
+6. Initialize the database:
    ```bash
    flask db init
    flask db migrate
    flask db upgrade
    ```
 
-6. Run the application:
+7. Run the application:
    ```bash
-   flask run
+   python run.py
    ```
 
-7. Open your browser and navigate to `http://127.0.0.1:5000`
+8. Open your browser and navigate to `http://127.0.0.1:5000`
 
 ## 📱 Usage Guide
 
@@ -116,7 +147,25 @@ speech_recognition/
 2. **Login**: Access your personalized dashboard
 3. **Upload Audio**: Navigate to the transcribe page and upload an audio file
 4. **View Results**: See the transcription result and copy or download the text
-5. **Manage History**: Access all your past transcriptions from the history page
+5. **Ask Questions**: Click "Ask Questions" to use the AI Q&A feature about your transcript
+6. **Review Q&A History**: Access all your questions and answers from the Q&A history page
+7. **Manage History**: Access all your past transcriptions from the history page
+
+## 🤖 Q&A Feature
+
+The intelligent Q&A system allows you to ask questions about your transcribed content:
+
+- **Smart Answers**: Uses DistilBERT AI model trained on SQuAD dataset
+- **Confidence Scores**: See how confident the AI is about each answer
+- **Suggested Questions**: Get automatically generated relevant questions
+- **Source Attribution**: See which part of the transcript the answer came from
+- **History Tracking**: All Q&A sessions are saved for future reference
+
+### Example Questions:
+- "What was the main topic discussed?"
+- "When did this event happen?"
+- "Who was mentioned in the conversation?"
+- "What was the conclusion reached?"
 
 ## 💡 Tips for Best Results
 
@@ -124,6 +173,8 @@ speech_recognition/
 - **Clear Speech**: Speak clearly and at a moderate pace
 - **File Size**: Files under 10MB work best. For longer recordings, consider splitting into smaller segments
 - **Processing Time**: Transcription typically takes 10-60 seconds depending on the length of your audio file
+- **Q&A Questions**: Be specific and use keywords from the transcript for better answers
+- **First Q&A**: The first question may take longer as the AI model downloads (~250MB)
 
 ## 📸 Screenshots
 
@@ -140,6 +191,7 @@ speech_recognition/
 - CSRF protection
 - Private transcription storage
 - Session management
+- Local AI processing (no external API calls for Q&A)
 
 ## 🌟 Future Enhancements
 
@@ -149,6 +201,8 @@ speech_recognition/
 - Advanced editing tools
 - Team collaboration features
 - API access
+- Multi-language Q&A support
+- Voice-based Q&A queries
 
 ## 📄 License
 
@@ -162,4 +216,4 @@ For questions, suggestions, or support:
 
 ---
 
-Built with ❤️ using Flask and Wav2Vec 2.0 AI Technology
+Built with ❤️ using Flask, Wav2Vec 2.0, and DistilBERT AI Technologies
